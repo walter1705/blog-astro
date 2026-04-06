@@ -1,0 +1,152 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+---
+
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <BaseHead title="Dashboard — Portfolio" description="Panel de métricas y visualizaciones. Próximamente." />
+  </head>
+  <body class="bg-gray-950 text-gray-100 antialiased">
+    <Header />
+
+    <main class="max-w-7xl mx-auto px-4 py-10">
+      <!-- Header row -->
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h1 class="text-3xl font-bold">Dashboard</h1>
+          <p class="text-gray-400 text-sm mt-1 font-mono">walter@portfolio — métricas en tiempo real</p>
+        </div>
+        <span class="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs font-mono px-3 py-1.5 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+          Coming Soon
+        </span>
+      </div>
+
+      <!-- KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Proyectos', value: '4', delta: '+1 este mes', color: 'indigo' },
+          { label: 'Posts publicados', value: '5', delta: '+2 este mes', color: 'purple' },
+          { label: 'GitHub Stars', value: '—', delta: 'próximamente', color: 'yellow' },
+          { label: 'Visitantes / día', value: '—', delta: 'próximamente', color: 'green' },
+        ].map((kpi) => (
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <p class="text-gray-500 text-xs font-mono uppercase tracking-wider mb-2">{kpi.label}</p>
+            <p class="text-3xl font-bold text-white mb-1">{kpi.value}</p>
+            <p class="text-xs text-gray-500">{kpi.delta}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Main grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <!-- Large chart placeholder -->
+        <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 min-h-64 flex flex-col">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider">Actividad — Últimos 30 días</h2>
+            <span class="text-xs text-gray-600 border border-gray-700 px-2 py-1 rounded font-mono">30d</span>
+          </div>
+          <div class="flex-1 flex items-end gap-1">
+            {Array.from({ length: 30 }, (_, i) => {
+              const h = Math.floor(Math.random() * 80) + 10;
+              return (
+                <div
+                  class="flex-1 bg-indigo-500/20 hover:bg-indigo-500/40 rounded-sm transition-colors cursor-default"
+                  style={`height: ${h}%`}
+                  title={`Día ${i + 1}`}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <!-- Pie placeholder -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col">
+          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-6">Tech Distribution</h2>
+          <div class="flex-1 flex items-center justify-center">
+            <div class="relative w-36 h-36">
+              <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#1f2937" stroke-width="4" />
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#6366f1" stroke-width="4"
+                  stroke-dasharray="35 65" stroke-dashoffset="0" />
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#a855f7" stroke-width="4"
+                  stroke-dasharray="25 75" stroke-dashoffset="-35" />
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#ec4899" stroke-width="4"
+                  stroke-dasharray="20 80" stroke-dashoffset="-60" />
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#22c55e" stroke-width="4"
+                  stroke-dasharray="20 80" stroke-dashoffset="-80" />
+              </svg>
+            </div>
+          </div>
+          <div class="space-y-2 mt-4">
+            {[
+              { label: 'TypeScript', color: 'bg-indigo-500' },
+              { label: 'React / Angular', color: 'bg-purple-500' },
+              { label: 'CSS / Tailwind', color: 'bg-pink-500' },
+              { label: 'Backend / DB', color: 'bg-green-500' },
+            ].map((item) => (
+              <div class="flex items-center gap-2 text-xs text-gray-400">
+                <span class={`w-2.5 h-2.5 rounded-sm ${item.color}`} />
+                {item.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Table placeholder -->
+        <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-4">Posts Recientes</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-600 border-b border-gray-800">
+                <th class="pb-3 font-normal font-mono">Título</th>
+                <th class="pb-3 font-normal font-mono">Tags</th>
+                <th class="pb-3 font-normal font-mono text-right">Views</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+              {['MDX en Astro 5', 'Clean Architecture', 'State Management 101', 'Testing con Vitest'].map((title) => (
+                <tr class="text-gray-400">
+                  <td class="py-3 text-white">{title}</td>
+                  <td class="py-3">
+                    <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full px-2 py-0.5">
+                      dev
+                    </span>
+                  </td>
+                  <td class="py-3 text-right font-mono text-gray-500">—</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Status panel -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-4">System Status</h2>
+          <div class="space-y-4">
+            {[
+              { label: 'Build', status: 'OK', color: 'text-green-400', dot: 'bg-green-400' },
+              { label: 'Deploy', status: 'OK', color: 'text-green-400', dot: 'bg-green-400' },
+              { label: 'Analytics', status: 'Pendiente', color: 'text-yellow-400', dot: 'bg-yellow-400' },
+              { label: 'CMS', status: 'Pendiente', color: 'text-yellow-400', dot: 'bg-yellow-400' },
+              { label: 'Search', status: 'Pendiente', color: 'text-yellow-400', dot: 'bg-yellow-400' },
+            ].map((item) => (
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-400 font-mono">{item.label}</span>
+                <span class={`flex items-center gap-1.5 text-xs font-mono ${item.color}`}>
+                  <span class={`w-1.5 h-1.5 rounded-full ${item.dot}`} />
+                  {item.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

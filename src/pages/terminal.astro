@@ -1,0 +1,21 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import TerminalApp from '../components/Terminal';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <BaseHead title="Terminal — Portfolio" description="Explorá el portafolio desde una interfaz CLI interactiva." />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <TerminalApp client:load />
+  </body>
+</html>

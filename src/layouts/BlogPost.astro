@@ -2,84 +2,91 @@
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
 ---
 
-<html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
-	</head>
+<html lang="es">
+  <head>
+    <BaseHead title={title} description={description} />
+  </head>
 
-	<body>
-		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <img width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
-					<slot />
-				</div>
-			</article>
-		</main>
-		<Footer />
-	</body>
+  <body class="bg-gray-950 text-gray-100 antialiased">
+    <Header />
+
+    <main class="max-w-3xl mx-auto px-4 py-16">
+      <article>
+        <!-- Hero image -->
+        {heroImage && (
+          <div class="mb-10 rounded-xl overflow-hidden aspect-video">
+            <img
+              src={heroImage}
+              alt={title}
+              class="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        <!-- Header -->
+        <header class="mb-10">
+          {tags && tags.length > 0 && (
+            <div class="flex flex-wrap gap-2 mb-4">
+              {tags.map((tag: string) => (
+                <a
+                  href={`/blog`}
+                  class="text-xs font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 hover:bg-indigo-500/20 transition-colors"
+                >
+                  #{tag}
+                </a>
+              ))}
+            </div>
+          )}
+
+          <h1 class="text-3xl md:text-5xl font-bold text-white leading-tight mb-4">
+            {title}
+          </h1>
+
+          <div class="flex items-center gap-3 text-sm text-gray-500 font-mono">
+            <FormattedDate date={pubDate} />
+            {updatedDate && (
+              <>
+                <span>·</span>
+                <span class="italic">Actualizado: <FormattedDate date={updatedDate} /></span>
+              </>
+            )}
+          </div>
+        </header>
+
+        <hr class="border-gray-800 mb-10" />
+
+        <!-- Content -->
+        <div class="prose prose-invert prose-indigo max-w-none
+          prose-headings:font-bold prose-headings:text-white
+          prose-p:text-gray-300 prose-p:leading-relaxed
+          prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline
+          prose-strong:text-white
+          prose-code:text-indigo-300 prose-code:bg-gray-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+          prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-800
+          prose-blockquote:border-indigo-500 prose-blockquote:text-gray-400
+          prose-img:rounded-xl prose-img:border prose-img:border-gray-800
+          prose-hr:border-gray-800
+          prose-li:text-gray-300">
+          <slot />
+        </div>
+      </article>
+
+      <!-- Back link -->
+      <div class="mt-16 pt-8 border-t border-gray-800">
+        <a
+          href="/blog"
+          class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-400 transition-colors font-mono"
+        >
+          ← Volver al Blog
+        </a>
+      </div>
+    </main>
+  </body>
 </html>
