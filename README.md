@@ -1,68 +1,79 @@
-# Astro Starter Kit: Blog
+# walter.dev
 
-```sh
-npm create astro@latest -- --template blog
+Personal portfolio and blog built with Astro. Focused on clean architecture, solid fundamentals, and software that lasts.
+
+## Pages
+
+| Route | Description |
+| :---- | :---------- |
+| `/` | Landing page — Hero, Projects grid, Tech Stack, Explore section |
+| `/blog` | Blog listing with client-side tag filtering |
+| `/blog/[slug]` | Individual post with Tailwind Typography prose layout |
+| `/terminal` | Interactive CLI — browse the portfolio from a terminal emulator |
+| `/dashboard` | Grafana-style metrics dashboard (KPIs, charts, status panels) |
+| `/about` | About page |
+
+## Stack
+
+- **Astro 5** — static site generator with island architecture
+- **React 19** — used for interactive islands (`Terminal.tsx`)
+- **Tailwind CSS v4** — via `@tailwindcss/vite` (no config file needed)
+- **TypeScript** — strict throughout
+- **Framer Motion** — animations
+- **MDX** — rich content for blog posts
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── BaseHead.astro       # Head meta + ClientRouter (View Transitions)
+│   ├── Header.astro         # Sticky nav with all routes
+│   ├── Terminal.tsx         # React island — interactive CLI
+│   └── ...
+├── content/
+│   └── blog/                # Markdown & MDX posts
+├── data/
+│   └── projects.ts          # Central project data (landing + terminal)
+├── layouts/
+│   └── BlogPost.astro       # Post layout with prose-invert typography
+├── pages/
+│   ├── index.astro          # Landing page
+│   ├── terminal.astro       # Full-screen terminal wrapper
+│   ├── dashboard.astro      # Grafana-style dashboard
+│   └── blog/
+│       ├── index.astro      # Blog listing + tag filter
+│       └── [...slug].astro  # Post page
+└── styles/
+    └── global.css           # Tailwind v4 entry point + typography plugin
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/blog)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/blog)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/blog/devcontainer.json)
+## Commands
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+| Command | Action |
+| :------ | :----- |
+| `npm install` | Install dependencies |
+| `npm run dev` | Start dev server at `localhost:4321` |
+| `npm run build` | Build for production to `./dist/` |
+| `npm run preview` | Preview production build locally |
+| `npm run astro check` | Type-check the project |
 
-![blog](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+## Terminal Commands
 
-Features:
+The `/terminal` page runs an interactive CLI. Available commands:
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-├── public/
-├── src/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
+```
+help        Show available commands
+projects    List all projects
+open <n>    Open a project by number
+contact     Show contact info
+portfolio   Go to the portfolio landing
+clear       Clear the terminal
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Notes
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+- Tailwind v4 integrates as a Vite plugin — no `tailwind.config.mjs` file
+- Plugins declared in CSS: `@plugin "@tailwindcss/typography"` in `global.css`
+- React components imported in `.astro` files must use `client:*` directives for interactivity
+- View Transitions use `ClientRouter` from `astro:transitions` (not the deprecated `ViewTransitions`)

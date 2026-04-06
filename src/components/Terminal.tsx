@@ -16,7 +16,7 @@ Available commands:
   open [slug]       Open a project demo (e.g. open portfolio)
   contact           Show contact information
   portfolio         Go to the home page
-  grafana-cli       Go to the dashboard
+  grafana           Go to the dashboard
   clear             Clear the terminal
 `.trim();
 
@@ -90,7 +90,7 @@ function processCommand(raw: string): Line[] {
       setTimeout(() => (window.location.href = '/'), 600);
       break;
 
-    case 'grafana-cli':
+    case 'grafana':
       output.push({ type: 'output', text: 'Opening dashboard...' });
       setTimeout(() => (window.location.href = '/dashboard'), 600);
       break;

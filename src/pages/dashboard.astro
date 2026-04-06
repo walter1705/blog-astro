@@ -1,95 +1,190 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
+import ActivityChart from '../components/ActivityChart';
+import { getCollection } from 'astro:content';
+
+const GITHUB_USER = 'walter1705';
+const C = 2 * Math.PI * 14; // SVG circumference for r=14 ≈ 87.96
+
+// ── Types ────────────────────────────────────────────────────────────────────
+interface GHUser  { public_repos: number; followers: number }
+interface GHRepo  { name: string; language: string | null; stargazers_count: number; updated_at: string; html_url: string; fork: boolean }
+interface GHEvent { type: string; created_at: string; payload: { commits?: unknown[] } }
+
+// ── Fetch in parallel ────────────────────────────────────────────────────────
+async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/vnd.github.v3+json' } });
+    if (!res.ok) return fallback;
+    return res.json() as Promise<T>;
+  } catch { return fallback; }
+}
+
+const [profile, repos, events, posts] = await Promise.all([
+  safeFetch<GHUser>(`https://api.github.com/users/${GITHUB_USER}`, { public_repos: 0, followers: 0 }),
+  safeFetch<GHRepo[]>(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=100&type=public`, []),
+  safeFetch<GHEvent[]>(`https://api.github.com/users/${GITHUB_USER}/events?per_page=100`, []),
+  getCollection('blog'),
+]);
+
+// ── Derived stats ────────────────────────────────────────────────────────────
+const ownRepos   = repos.filter((r) => !r.fork);
+const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
+
+// Language distribution
+const LANG_COLORS: Record<string, { stroke: string; dot: string }> = {
+  TypeScript:  { stroke: '#6366f1', dot: 'bg-indigo-500'  },
+  JavaScript:  { stroke: '#eab308', dot: 'bg-yellow-500'  },
+  Astro:       { stroke: '#a855f7', dot: 'bg-purple-500'  },
+  CSS:         { stroke: '#ec4899', dot: 'bg-pink-500'    },
+  HTML:        { stroke: '#f97316', dot: 'bg-orange-500'  },
+  Python:      { stroke: '#3b82f6', dot: 'bg-blue-500'    },
+  Other:       { stroke: '#22c55e', dot: 'bg-green-500'   },
+};
+
+const langMap: Record<string, number> = {};
+for (const r of ownRepos) {
+  if (r.language) langMap[r.language] = (langMap[r.language] ?? 0) + 1;
+}
+const langTotal = Math.max(Object.values(langMap).reduce((a, b) => a + b, 0), 1);
+const topLangs  = Object.entries(langMap)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 4)
+  .map(([lang, count]) => ({
+    label:  lang,
+    pct:    count / langTotal,
+    colors: LANG_COLORS[lang] ?? LANG_COLORS.Other,
+  }));
+const topPct = topLangs.reduce((s, l) => s + l.pct, 0);
+if (topLangs.length === 4 && topPct < 0.995)
+  topLangs.push({ label: 'Other', pct: 1 - topPct, colors: LANG_COLORS.Other });
+
+// SVG pie segments
+let cumPct = 0;
+const pieSegments = topLangs.map((lang) => {
+  const dash = lang.pct * C;
+  const gap  = C - dash;
+  const off  = -(cumPct * C);
+  cumPct += lang.pct;
+  return { ...lang, dash, gap, off };
+});
+
+// Initial activity data (30 days) for the client-side chart component
+const now = new Date();
+const initialActivityData = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date(now);
+  d.setDate(d.getDate() - (29 - i));
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { key, label: new Date(d.getFullYear(), d.getMonth(), d.getDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), count: 0 };
+});
+const dayIdx = new Map(initialActivityData.map((d, i) => [d.key, i]));
+for (const e of events) {
+  const date = e.created_at?.slice(0, 10);
+  if (!date) continue;
+  const i = dayIdx.get(date);
+  if (i !== undefined) {
+    initialActivityData[i].count += e.type === 'PushEvent' ? (e.payload?.commits?.length ?? 1) : 1;
+  }
+}
+
+// Recent repos
+const recentRepos = ownRepos.slice(0, 6).map((r) => ({
+  name:      r.name,
+  language:  r.language ?? '—',
+  stars:     r.stargazers_count,
+  url:       r.html_url,
+  updatedAt: new Date(r.updated_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
+}));
+
+const fetchedAt = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+const apiOk     = repos.length > 0;
 ---
 
 <!doctype html>
-<html lang="es" class="scroll-smooth">
+<html lang="en" class="scroll-smooth">
   <head>
-    <BaseHead title="Dashboard — Portfolio" description="Panel de métricas y visualizaciones. Próximamente." />
+    <BaseHead title="Dashboard — walter.dev" description="Real-time GitHub stats and portfolio metrics." />
   </head>
   <body class="bg-gray-950 text-gray-100 antialiased">
     <Header />
 
     <main class="max-w-7xl mx-auto px-4 py-10">
-      <!-- Header row -->
+
+      <!-- Page header -->
       <div class="flex items-center justify-between mb-8">
         <div>
           <h1 class="text-3xl font-bold">Dashboard</h1>
-          <p class="text-gray-400 text-sm mt-1 font-mono">walter@portfolio — métricas en tiempo real</p>
+          <p class="text-gray-400 text-sm mt-1 font-mono">walter@portfolio — GitHub metrics</p>
         </div>
-        <span class="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs font-mono px-3 py-1.5 rounded-full">
-          <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
-          Coming Soon
+        <span class={`inline-flex items-center gap-2 border text-xs font-mono px-3 py-1.5 rounded-full ${apiOk ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+          <span class={`w-2 h-2 rounded-full ${apiOk ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></span>
+          {apiOk ? `Live · ${fetchedAt}` : 'GitHub API unreachable'}
         </span>
       </div>
 
       <!-- KPI row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Proyectos', value: '4', delta: '+1 este mes', color: 'indigo' },
-          { label: 'Posts publicados', value: '5', delta: '+2 este mes', color: 'purple' },
-          { label: 'GitHub Stars', value: '—', delta: 'próximamente', color: 'yellow' },
-          { label: 'Visitantes / día', value: '—', delta: 'próximamente', color: 'green' },
+          { label: 'Public Repos',     value: String(profile.public_repos), sub: `${ownRepos.length} own · ${repos.length - ownRepos.length} forks` },
+          { label: 'Total Stars',      value: String(totalStars),           sub: 'across all repos'                                                  },
+          { label: 'Followers',        value: String(profile.followers),    sub: `@${GITHUB_USER}`                                                   },
+          { label: 'Posts Published',  value: String(posts.length),         sub: 'on the blog'                                                       },
         ].map((kpi) => (
           <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
             <p class="text-gray-500 text-xs font-mono uppercase tracking-wider mb-2">{kpi.label}</p>
             <p class="text-3xl font-bold text-white mb-1">{kpi.value}</p>
-            <p class="text-xs text-gray-500">{kpi.delta}</p>
+            <p class="text-xs text-gray-500">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
       <!-- Main grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Large chart placeholder -->
+
+        <!-- Activity chart (interactive React island) -->
         <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 min-h-64 flex flex-col">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider">Actividad — Últimos 30 días</h2>
-            <span class="text-xs text-gray-600 border border-gray-700 px-2 py-1 rounded font-mono">30d</span>
-          </div>
-          <div class="flex-1 flex items-end gap-1">
-            {Array.from({ length: 30 }, (_, i) => {
-              const h = Math.floor(Math.random() * 80) + 10;
-              return (
-                <div
-                  class="flex-1 bg-indigo-500/20 hover:bg-indigo-500/40 rounded-sm transition-colors cursor-default"
-                  style={`height: ${h}%`}
-                  title={`Día ${i + 1}`}
-                />
-              );
-            })}
-          </div>
+          <ActivityChart
+            client:load
+            initialData={initialActivityData}
+            githubUser={GITHUB_USER}
+          />
         </div>
 
-        <!-- Pie placeholder -->
+        <!-- Language pie -->
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col">
-          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-6">Tech Distribution</h2>
+          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-6">
+            Language Distribution
+          </h2>
           <div class="flex-1 flex items-center justify-center">
-            <div class="relative w-36 h-36">
-              <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#1f2937" stroke-width="4" />
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#6366f1" stroke-width="4"
-                  stroke-dasharray="35 65" stroke-dashoffset="0" />
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#a855f7" stroke-width="4"
-                  stroke-dasharray="25 75" stroke-dashoffset="-35" />
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#ec4899" stroke-width="4"
-                  stroke-dasharray="20 80" stroke-dashoffset="-60" />
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#22c55e" stroke-width="4"
-                  stroke-dasharray="20 80" stroke-dashoffset="-80" />
-              </svg>
-            </div>
+            {pieSegments.length > 0 ? (
+              <div class="relative w-36 h-36">
+                <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#1f2937" stroke-width="4" />
+                  {pieSegments.map((seg) => (
+                    <circle
+                      cx="18" cy="18" r="14"
+                      fill="none"
+                      stroke={seg.colors.stroke}
+                      stroke-width="4"
+                      stroke-dasharray={`${seg.dash} ${seg.gap}`}
+                      stroke-dashoffset={seg.off}
+                    />
+                  ))}
+                </svg>
+              </div>
+            ) : (
+              <p class="text-gray-600 text-xs font-mono">No data</p>
+            )}
           </div>
           <div class="space-y-2 mt-4">
-            {[
-              { label: 'TypeScript', color: 'bg-indigo-500' },
-              { label: 'React / Angular', color: 'bg-purple-500' },
-              { label: 'CSS / Tailwind', color: 'bg-pink-500' },
-              { label: 'Backend / DB', color: 'bg-green-500' },
-            ].map((item) => (
-              <div class="flex items-center gap-2 text-xs text-gray-400">
-                <span class={`w-2.5 h-2.5 rounded-sm ${item.color}`} />
-                {item.label}
+            {pieSegments.map((seg) => (
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <div class="flex items-center gap-2">
+                  <span class={`w-2.5 h-2.5 rounded-sm ${seg.colors.dot}`} />
+                  {seg.label}
+                </div>
+                <span class="text-gray-600 font-mono">{Math.round(seg.pct * 100)}%</span>
               </div>
             ))}
           </div>
@@ -98,27 +193,41 @@ import Header from '../components/Header.astro';
 
       <!-- Bottom row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Table placeholder -->
+
+        <!-- Recent repos table -->
         <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-4">Posts Recientes</h2>
+          <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-4">Recent Repos</h2>
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-gray-600 border-b border-gray-800">
-                <th class="pb-3 font-normal font-mono">Título</th>
-                <th class="pb-3 font-normal font-mono">Tags</th>
-                <th class="pb-3 font-normal font-mono text-right">Views</th>
+                <th class="pb-3 font-normal font-mono">Repo</th>
+                <th class="pb-3 font-normal font-mono">Lang</th>
+                <th class="pb-3 font-normal font-mono text-right">★</th>
+                <th class="pb-3 font-normal font-mono text-right hidden md:table-cell">Updated</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-800">
-              {['MDX en Astro 5', 'Clean Architecture', 'State Management 101', 'Testing con Vitest'].map((title) => (
-                <tr class="text-gray-400">
-                  <td class="py-3 text-white">{title}</td>
+              {recentRepos.map((repo) => (
+                <tr class="text-gray-400 hover:bg-gray-800/50 transition-colors">
                   <td class="py-3">
-                    <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full px-2 py-0.5">
-                      dev
+                    <a
+                      href={repo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-white hover:text-indigo-400 transition-colors font-mono text-xs"
+                    >
+                      {repo.name}
+                    </a>
+                  </td>
+                  <td class="py-3">
+                    <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full px-2 py-0.5 font-mono">
+                      {repo.language}
                     </span>
                   </td>
-                  <td class="py-3 text-right font-mono text-gray-500">—</td>
+                  <td class="py-3 text-right font-mono text-gray-500 text-xs">{repo.stars}</td>
+                  <td class="py-3 text-right font-mono text-gray-600 text-xs hidden md:table-cell">
+                    {repo.updatedAt}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -130,22 +239,46 @@ import Header from '../components/Header.astro';
           <h2 class="text-sm font-mono text-gray-400 uppercase tracking-wider mb-4">System Status</h2>
           <div class="space-y-4">
             {[
-              { label: 'Build', status: 'OK', color: 'text-green-400', dot: 'bg-green-400' },
-              { label: 'Deploy', status: 'OK', color: 'text-green-400', dot: 'bg-green-400' },
-              { label: 'Analytics', status: 'Pendiente', color: 'text-yellow-400', dot: 'bg-yellow-400' },
-              { label: 'CMS', status: 'Pendiente', color: 'text-yellow-400', dot: 'bg-yellow-400' },
-              { label: 'Search', status: 'Pendiente', color: 'text-yellow-400', dot: 'bg-yellow-400' },
+              { label: 'GitHub API', ok: apiOk,  status: apiOk ? 'OK' : 'Error'   },
+              { label: 'Build',      ok: true,   status: 'OK'                      },
+              { label: 'Deploy',     ok: true,   status: 'OK'                      },
+              { label: 'Analytics',  ok: false,  status: 'Pending'                 },
+              { label: 'Search',     ok: false,  status: 'Pending'                 },
             ].map((item) => (
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-400 font-mono">{item.label}</span>
-                <span class={`flex items-center gap-1.5 text-xs font-mono ${item.color}`}>
-                  <span class={`w-1.5 h-1.5 rounded-full ${item.dot}`} />
+                <span class={`flex items-center gap-1.5 text-xs font-mono ${item.ok ? 'text-green-400' : 'text-yellow-400'}`}>
+                  <span class={`w-1.5 h-1.5 rounded-full ${item.ok ? 'bg-green-400' : 'bg-yellow-400'}`} />
                   {item.status}
                 </span>
               </div>
             ))}
           </div>
+
+          <div class="mt-6 pt-4 border-t border-gray-800 space-y-2">
+            <p class="text-xs text-gray-600 font-mono uppercase tracking-wider mb-3">GitHub</p>
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-gray-500">Profile</span>
+              <a
+                href={`https://github.com/${GITHUB_USER}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                @{GITHUB_USER}
+              </a>
+            </div>
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-gray-500">Own repos</span>
+              <span class="text-gray-300">{ownRepos.length}</span>
+            </div>
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-gray-500">Total stars</span>
+              <span class="text-gray-300">{totalStars}</span>
+            </div>
+          </div>
         </div>
+
       </div>
     </main>
   </body>
