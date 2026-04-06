@@ -104,7 +104,7 @@ const apiOk     = repos.length > 0;
 <!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
-    <BaseHead title="Dashboard — walter.dev" description="Real-time GitHub stats and portfolio metrics." />
+    <BaseHead title="Grafana-like Dashboard — walter.dev" description="Real-time GitHub stats and portfolio metrics." />
   </head>
   <body class="bg-gray-950 text-gray-100 antialiased">
     <Header />
@@ -145,7 +145,7 @@ const apiOk     = repos.length > 0;
         <!-- Activity chart (interactive React island) -->
         <div class="md:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 min-h-64 flex flex-col">
           <ActivityChart
-            client:load
+            client:only="react"
             initialData={initialActivityData}
             githubUser={GITHUB_USER}
           />
