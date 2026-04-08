@@ -87,12 +87,12 @@ function processCommand(raw: string): Line[] {
 
     case 'portfolio':
       output.push({ type: 'output', text: 'Redirecting to home...' });
-      setTimeout(() => (window.location.href = '/'), 600);
+      setTimeout(() => (window.location.href = import.meta.env.BASE_URL), 600);
       break;
 
     case 'grafana':
       output.push({ type: 'output', text: 'Opening dashboard...' });
-      setTimeout(() => (window.location.href = '/dashboard'), 600);
+      setTimeout(() => (window.location.href = `${import.meta.env.BASE_URL}dashboard`), 600);
       break;
 
     case 'clear':
