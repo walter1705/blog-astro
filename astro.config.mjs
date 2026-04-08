@@ -6,7 +6,8 @@ import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  site: 'https://example.com',
+  site: 'https://walter1705.github.io',
+  base: '/blog-astro',
   integrations: [mdx(), sitemap(), react()],
   vite: {
     plugins: [tailwindcss()],
