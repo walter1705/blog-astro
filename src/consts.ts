@@ -3,3 +3,8 @@
 
 export const SITE_TITLE = 'walter.dev';
 export const SITE_DESCRIPTION = 'Junior Fullstack Developer — Portfolio & Blog';
+
+// BASE is resolved by Vite at build time from astro.config.mjs `base` option.
+// Importing this from a .ts module guarantees Vite processes it correctly,
+// unlike using import.meta.env.BASE_URL directly in .astro frontmatter.
+export const BASE = import.meta.env.BASE_URL;

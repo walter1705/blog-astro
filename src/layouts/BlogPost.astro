@@ -3,10 +3,11 @@ import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import FormattedDate from '../components/FormattedDate.astro';
+import { BASE } from '../consts';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const base = import.meta.env.BASE_URL;
+const base = BASE;
 const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
 ---
 

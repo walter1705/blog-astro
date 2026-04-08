@@ -1,10 +1,10 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import { SITE_TITLE, SITE_DESCRIPTION, BASE } from '../consts';
 import { projects } from '../data/projects';
 
-const base = import.meta.env.BASE_URL;
+const base = BASE;
 
 const techStack = [
   'React', 'Astro', 'TypeScript', 'Tailwind CSS',
